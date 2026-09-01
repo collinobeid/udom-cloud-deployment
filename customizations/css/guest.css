@@ -1,0 +1,29 @@
+/* Login page */
+#body-login {
+    background-color: #ffffff;
+}
+
+/* Login form */
+#body-login form {
+    background-color: #ffffff;
+}
+
+/* Login inputs */
+#body-login input {
+    border: 1px solid #0057b8;
+}
+
+/* Login button */
+#body-login input[type="submit"] {
+    background-color: #0057b8;
+    color: #ffffff;
+}
+
+/* Gold links */
+#body-login a {
+    color: #c9a227;
+}
+
+#body-login {
+    background-color: #ffffff !important;
+}
