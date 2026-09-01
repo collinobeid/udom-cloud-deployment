@@ -45,7 +45,7 @@ docker exec -u 33 udom-cloud-deployment-app-1 php occ config:system:set skeleton
 # 5. Local AI Integration (Ollama + Qwen3)
 echo "Setting up Local AI Integration..."
 # Ensure Ollama is running and download the model in the background
-docker exec udom-cloud-deployment-ollama-1 sh -c 'ollama run qwen2.5 > /dev/null 2>&1 &'
+docker exec udom-cloud-deployment-ollama-1 sh -c 'ollama run qwen2.5:1.5b > /dev/null 2>&1 &'
 
 # Install Nextcloud Assistant and OpenAI integration
 docker exec -u 33 udom-cloud-deployment-app-1 php occ app:install --force --allow-unstable assistant
