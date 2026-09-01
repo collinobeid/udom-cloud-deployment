@@ -51,9 +51,10 @@ docker exec udom-cloud-deployment-ollama-1 sh -c 'ollama run qwen2.5:1.5b > /dev
 docker exec -u 33 udom-cloud-deployment-app-1 php occ app:install --force --allow-unstable assistant
 docker exec -u 33 udom-cloud-deployment-app-1 php occ app:install --force --allow-unstable integration_openai
 
-# Configure API endpoint
+# Configure API endpoint and Model
 docker exec -u 33 udom-cloud-deployment-app-1 php occ config:app:set integration_openai api_url --value="http://ollama:11434/v1"
 docker exec -u 33 udom-cloud-deployment-app-1 php occ config:app:set integration_openai api_key --value="ollama"
+docker exec -u 33 udom-cloud-deployment-app-1 php occ config:app:set integration_openai model --value="qwen2.5:1.5b"
 docker exec -u 33 udom-cloud-deployment-app-1 php occ config:app:set assistant integration --value="integration_openai"
 
 echo "=================================================="
