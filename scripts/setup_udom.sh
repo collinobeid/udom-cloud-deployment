@@ -48,8 +48,8 @@ echo "Setting up Local AI Integration..."
 docker exec udom-cloud-deployment-ollama-1 sh -c 'ollama run qwen2.5 > /dev/null 2>&1 &'
 
 # Install Nextcloud Assistant and OpenAI integration
-docker exec -u 33 udom-cloud-deployment-app-1 php occ app:install assistant
-docker exec -u 33 udom-cloud-deployment-app-1 php occ app:install integration_openai
+docker exec -u 33 udom-cloud-deployment-app-1 php occ app:install --force --allow-unstable assistant
+docker exec -u 33 udom-cloud-deployment-app-1 php occ app:install --force --allow-unstable integration_openai
 
 # Configure API endpoint
 docker exec -u 33 udom-cloud-deployment-app-1 php occ config:app:set integration_openai api_url --value="http://ollama:11434/v1"
