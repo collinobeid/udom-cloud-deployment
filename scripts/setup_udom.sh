@@ -42,6 +42,21 @@ docker exec -u 33 udom-cloud-deployment-app-1 php occ ldap:set-config $CONFIG_ID
 echo "Setting custom UDOM onboarding files..."
 docker exec -u 33 udom-cloud-deployment-app-1 php occ config:system:set skeletondirectory --value='/var/www/html/custom_assets/skeleton'
 
+# 5. Local AI Integration (Ollama + Qwen3)
+echo "Setting up Local AI Integration..."
+# Ensure Ollama is running and download the model in the background
+docker exec udom-cloud-deployment-ollama-1 sh -c 'ollama run qwen2.5:1.5b > /dev/null 2>&1 &'
+
+# Install Nextcloud Assistant and OpenAI integration
+docker exec -u 33 udom-cloud-deployment-app-1 php occ app:install --force --allow-unstable assistant
+docker exec -u 33 udom-cloud-deployment-app-1 php occ app:install --force --allow-unstable integration_openai
+
+# Configure API endpoint and Model
+docker exec -u 33 udom-cloud-deployment-app-1 php occ config:app:set integration_openai url --value="http://ollama:11434/v1"
+docker exec -u 33 udom-cloud-deployment-app-1 php occ config:app:set integration_openai api_key --value="ollama"
+docker exec -u 33 udom-cloud-deployment-app-1 php occ config:app:set integration_openai default_completion_model_id --value="qwen2.5:1.5b"
+docker exec -u 33 udom-cloud-deployment-app-1 php occ config:app:set assistant integration --value="integration_openai"
+
 echo "=================================================="
 echo "UDOM Cloud Configuration Complete!"
 echo "=================================================="
