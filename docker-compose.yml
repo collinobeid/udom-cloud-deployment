@@ -29,6 +29,21 @@ services:
       - MYSQL_HOST=db
       - NEXTCLOUD_ADMIN_PASSWORD=udom_admin
 
+  ldap:
+    image: osixia/openldap:1.5.0
+    restart: always
+    environment:
+      - LDAP_ORGANISATION=UDOM Cloud
+      - LDAP_DOMAIN=udom.local
+      - LDAP_ADMIN_PASSWORD=udom_ldap_admin
+    volumes:
+      - ldap_data:/var/lib/ldap
+      - ldap_config:/etc/ldap/slapd.d
+    ports:
+      - "389:389"
+
 volumes:
   db_data:
   nextcloud_data:
+  ldap_data:
+  ldap_config:
