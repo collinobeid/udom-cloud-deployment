@@ -22,6 +22,7 @@ services:
     volumes:
       - nextcloud_data:/var/www/html
       - ./customizations:/var/www/html/custom_assets
+      - ./customizations/appapi.conf:/etc/apache2/conf-enabled/appapi.conf:ro
     environment:
       - MYSQL_PASSWORD=${MYSQL_PASSWORD}
       - MYSQL_DATABASE=${MYSQL_DATABASE}
@@ -47,10 +48,13 @@ services:
       - nextcloud_data:/var/www/html
       - ./scripts/setup-ai.sh:/setup-ai.sh
       - ./patches:/patches
+    environment:
+      - APPAPI_SHARED_KEY=${APPAPI_SHARED_KEY}
     entrypoint: /bin/sh /setup-ai.sh
     depends_on:
       - app
       - ollama
+      - appapi-harp
 
   ai-worker:
     image: nextcloud:34.0.3-apache
@@ -70,8 +74,28 @@ services:
     volumes:
       - ollama_data:/root/.ollama
 
+  # ================================================
+  # APPAPI HARP PROXY — Secure ExApp Deployment
+  # ================================================
+  # HaRP manages ExApp containers (like Context Chat Backend)
+  # on behalf of Nextcloud's AppAPI without exposing the Docker
+  # socket to the Nextcloud application container.
+  appapi-harp:
+    image: ghcr.io/nextcloud/nextcloud-appapi-harp:release
+    restart: unless-stopped
+    privileged: true
+    environment:
+      - HP_SHARED_KEY=${APPAPI_SHARED_KEY}
+      - NC_INSTANCE_URL=http://app:80
+      - HP_LOG_LEVEL=info
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - harp_certs:/certs
+    depends_on:
+      - app
 
 volumes:
   db_data:
   nextcloud_data:
   ollama_data:
+  harp_certs:
