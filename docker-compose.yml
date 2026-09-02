@@ -1,4 +1,3 @@
-version: '3.8'
 
 services:
   db:
@@ -8,10 +7,10 @@ services:
     volumes:
       - db_data:/var/lib/mysql
     environment:
-      - MYSQL_ROOT_PASSWORD=udom_root_password
-      - MYSQL_PASSWORD=udom_db_password
-      - MYSQL_DATABASE=nextcloud
-      - MYSQL_USER=nextcloud
+      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD}
+      - MYSQL_DATABASE=${MYSQL_DATABASE}
+      - MYSQL_USER=${MYSQL_USER}
 
   app:
     image: nextcloud:34.0.3-apache
@@ -23,14 +22,77 @@ services:
     volumes:
       - nextcloud_data:/var/www/html
       - ./customizations:/var/www/html/custom_assets
+      - ./customizations/appapi.conf:/etc/apache2/conf-enabled/appapi.conf:ro
     environment:
-      - MYSQL_PASSWORD=udom_db_password
-      - MYSQL_DATABASE=nextcloud
-      - MYSQL_USER=nextcloud
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD}
+      - MYSQL_DATABASE=${MYSQL_DATABASE}
+      - MYSQL_USER=${MYSQL_USER}
       - MYSQL_HOST=db
       # Automatically install Nextcloud without showing the setup screen
-      - NEXTCLOUD_ADMIN_USER=admin
-      - NEXTCLOUD_ADMIN_PASSWORD=udom_admin
+      - NEXTCLOUD_ADMIN_USER=${NEXTCLOUD_ADMIN_USER}
+      - NEXTCLOUD_ADMIN_PASSWORD=${NEXTCLOUD_ADMIN_PASSWORD}
+
+  cron:
+    image: nextcloud:34.0.3-apache
+    restart: always
+    volumes:
+      - nextcloud_data:/var/www/html
+    entrypoint: /cron.sh
+    depends_on:
+      - db
+
+  ai-setup:
+    image: nextcloud:34.0.3-apache
+    restart: "no"
+    volumes:
+      - nextcloud_data:/var/www/html
+      - ./scripts/setup-ai.sh:/setup-ai.sh
+      - ./patches:/patches
+    environment:
+      - APPAPI_SHARED_KEY=${APPAPI_SHARED_KEY}
+    entrypoint: /bin/sh /setup-ai.sh
+    depends_on:
+      - app
+      - ollama
+      - appapi-harp
+
+  ai-worker:
+    image: nextcloud:34.0.3-apache
+    restart: always
+    user: www-data
+    volumes:
+      - nextcloud_data:/var/www/html
+    command: php occ taskprocessing:worker
+    depends_on:
+      - db
+
+  ollama:
+    image: ollama/ollama:latest
+    restart: always
+    ports:
+      - 11434:11434
+    volumes:
+      - ollama_data:/root/.ollama
+
+  # ================================================
+  # APPAPI HARP PROXY — Secure ExApp Deployment
+  # ================================================
+  # HaRP manages ExApp containers (like Context Chat Backend)
+  # on behalf of Nextcloud's AppAPI without exposing the Docker
+  # socket to the Nextcloud application container.
+  appapi-harp:
+    image: ghcr.io/nextcloud/nextcloud-appapi-harp:release
+    restart: unless-stopped
+    privileged: true
+    environment:
+      - HP_SHARED_KEY=${APPAPI_SHARED_KEY}
+      - NC_INSTANCE_URL=http://app:80
+      - HP_LOG_LEVEL=info
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - harp_certs:/certs
+    depends_on:
+      - app
 
   ldap:
     image: osixia/openldap:1.5.0
@@ -50,3 +112,5 @@ volumes:
   nextcloud_data:
   ldap_data:
   ldap_config:
+  ollama_data:
+  harp_certs:
