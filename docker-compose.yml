@@ -23,6 +23,9 @@ services:
       - nextcloud_data:/var/www/html
       - ./customizations:/var/www/html/custom_assets
       - ./customizations/appapi.conf:/etc/apache2/conf-enabled/appapi.conf:ro
+      - ./customizations/apache-mods/proxy.load:/etc/apache2/mods-enabled/proxy.load:ro
+      - ./customizations/apache-mods/proxy.conf:/etc/apache2/mods-enabled/proxy.conf:ro
+      - ./customizations/apache-mods/proxy_http.load:/etc/apache2/mods-enabled/proxy_http.load:ro
     environment:
       - MYSQL_PASSWORD=${MYSQL_PASSWORD}
       - MYSQL_DATABASE=${MYSQL_DATABASE}
@@ -56,6 +59,20 @@ services:
       - ollama
       - appapi-harp
 
+  security-init:
+    image: nextcloud:34.0.3-apache
+    restart: "no"
+    volumes:
+      - nextcloud_data:/var/www/html
+      - ./scripts/security-setup.sh:/security-setup.sh
+    environment:
+      - LDAP_ADMIN_PASSWORD=${LDAP_ADMIN_PASSWORD}
+      - LDAP_STUDENT_TEST_PASSWORD=${LDAP_STUDENT_TEST_PASSWORD}
+      - LDAP_STAFF_TEST_PASSWORD=${LDAP_STAFF_TEST_PASSWORD}
+    entrypoint: /bin/bash /security-setup.sh
+    depends_on:
+      - app
+      - ldap
   ai-worker:
     image: nextcloud:34.0.3-apache
     restart: always
@@ -100,7 +117,7 @@ services:
     environment:
       - LDAP_ORGANISATION=UDOM Cloud
       - LDAP_DOMAIN=udom.local
-      - LDAP_ADMIN_PASSWORD=udom_ldap_admin
+      - LDAP_ADMIN_PASSWORD=${LDAP_ADMIN_PASSWORD}
     volumes:
       - ldap_data:/var/lib/ldap
       - ldap_config:/etc/ldap/slapd.d

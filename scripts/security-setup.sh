@@ -31,6 +31,7 @@
 set -euo pipefail
 
 OCC="docker compose exec -T -u www-data app php occ"
+LDAP_EXEC="docker compose exec -T ldap"
 
 echo "=== Waiting for Nextcloud to be ready ==="
 READY=0
@@ -64,8 +65,18 @@ ${OCC} ldap:set-config s01 ldapGroupFilterObjectclass groupOfNames
 ${OCC} ldap:set-config s01 ldapGroupFilter "(&(objectclass=groupOfNames))"
 ${OCC} ldap:set-config s01 ldapGroupMemberAssocAttr member
 ${OCC} ldap:set-config s01 useMemberOfToDetectMembership 0
+${OCC} ldap:set-config s01 ldapConfigurationActive 1
+${OCC} ldap:set-config s01 ldapAgentPassword "${LDAP_ADMIN_PASSWORD}"
 echo
 
+
+echo "=== [1b/6] LDAP test-user password re-seed ==="
+# These accounts's userPassword can silently revert to the LDIF placeholder
+# after certain restarts (observed 2026-09-08). Re-set them idempotently
+# from env vars (never hardcoded) so logins keep working.
+${LDAP_EXEC} ldappasswd -x -D "cn=admin,dc=udom,dc=local" -w "${LDAP_ADMIN_PASSWORD}" -s "${LDAP_STUDENT_TEST_PASSWORD}" "uid=t21-03-05678,ou=people,dc=udom,dc=local" || true
+${LDAP_EXEC} ldappasswd -x -D "cn=admin,dc=udom,dc=local" -w "${LDAP_ADMIN_PASSWORD}" -s "${LDAP_STAFF_TEST_PASSWORD}" "uid=stf-2031,ou=people,dc=udom,dc=local" || true
+echo
 echo "=== [2/6] Password policy ==="
 ${OCC} app:enable password_policy
 ${OCC} config:app:set password_policy minimal_length --value="10"
