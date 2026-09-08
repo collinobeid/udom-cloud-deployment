@@ -1,0 +1,44 @@
+dn: ou=people,dc=udom,dc=local
+objectClass: organizationalUnit
+ou: people
+
+dn: ou=groups,dc=udom,dc=local
+objectClass: organizationalUnit
+ou: groups
+
+dn: uid=t21-03-05678,ou=people,dc=udom,dc=local
+objectClass: inetOrgPerson
+objectClass: posixAccount
+objectClass: shadowAccount
+uid: t21-03-05678
+cn: Amani Mushi
+sn: Mushi
+givenName: Amani
+mail: amani.mushi@student.udomtest.local
+uidNumber: 10001
+gidNumber: 5001
+homeDirectory: /home/t21-03-05678
+loginShell: /bin/bash
+userPassword: {SSHA}placeholder
+description: Student - CIVE - BSc Software Engineering
+
+dn: uid=stf-2031,ou=people,dc=udom,dc=local
+objectClass: inetOrgPerson
+objectClass: posixAccount
+objectClass: shadowAccount
+uid: stf-2031
+cn: Grace Lyimo
+sn: Lyimo
+givenName: Grace
+mail: grace.lyimo@staff.udomtest.local
+uidNumber: 10002
+gidNumber: 5002
+homeDirectory: /home/stf-2031
+loginShell: /bin/bash
+userPassword: {SSHA}placeholder
+description: Staff - ICT Department
+
+dn: cn=udom-staff,ou=groups,dc=udom,dc=local
+objectClass: groupOfNames
+cn: udom-staff
+member: uid=stf-2031,ou=people,dc=udom,dc=local
