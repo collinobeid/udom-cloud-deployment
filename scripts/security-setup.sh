@@ -16,7 +16,8 @@
 #      directory (this script does not create LDAP accounts).
 #
 # USAGE:
-#   bash scripts/security-setup.sh
+#   bash scripts/security-setup.sh          (from host)
+#   /bin/bash /security-setup.sh            (from inside security-init container)
 #
 # SAFETY:
 #   - Contains ONLY reproducible `occ` configuration commands.
@@ -24,26 +25,44 @@
 #     backup codes, or other credential material.
 #   - Safe to re-run: every command is a direct config:set/set-config
 #     call, so re-running just re-applies the same values.
-#   - Does not use `docker exec` with a hard-coded container name;
-#     uses `docker compose exec` against the `app` service instead,
-#     so it works regardless of the Compose project name.
-
+#   - Auto-detects whether it's running on the host (uses
+#     `docker compose exec`) or inside a container with direct
+#     filesystem access to Nextcloud (e.g. the security-init service).
 set -euo pipefail
 
-OCC="docker compose exec -T -u www-data app php occ"
-LDAP_EXEC="docker compose exec -T ldap"
+if command -v docker >/dev/null 2>&1 && docker compose version >/dev/null 2>&1; then
+  RUN_CONTEXT="host"
+else
+  RUN_CONTEXT="container"
+fi
+
+occ() {
+  if [ "${RUN_CONTEXT}" = "host" ]; then
+    docker compose exec -T -u www-data app php occ "$@"
+  else
+    (cd /var/www/html && php occ "$@")
+  fi
+}
+
+ldap_set_password() {
+  local dn="$1" pass="$2"
+  if [ "${RUN_CONTEXT}" = "host" ]; then
+    docker compose exec -T ldap ldappasswd -x -D "cn=admin,dc=udom,dc=local" -w "${LDAP_ADMIN_PASSWORD}" -s "${pass}" "${dn}" || true
+  else
+    php -r '$dn=$argv[1];$pass=$argv[2];$adminPw=$argv[3];$c=ldap_connect("ldap://ldap:389");ldap_set_option($c,LDAP_OPT_PROTOCOL_VERSION,3);if(!@ldap_bind($c,"cn=admin,dc=udom,dc=local",$adminPw)){fwrite(STDERR,"LDAP bind failed for $dn\n");exit(0);}@ldap_mod_replace($c,$dn,["userPassword"=>$pass]);ldap_unbind($c);' "${dn}" "${pass}" "${LDAP_ADMIN_PASSWORD}" || true
+  fi
+}
 
 echo "=== Waiting for Nextcloud to be ready ==="
 READY=0
 for i in $(seq 1 30); do
-  if ${OCC} status --output=json >/dev/null 2>&1; then
+  if occ status --output=json >/dev/null 2>&1; then
     READY=1
     break
   fi
   echo "  Nextcloud not ready yet, retrying in 5s... (${i}/30)"
   sleep 5
 done
-
 if [ "${READY}" -ne 1 ]; then
   echo "ERROR: Nextcloud did not become ready in time. Aborting." >&2
   exit 1
@@ -55,55 +74,56 @@ echo "=== [1/6] LDAP: username/display-name/group mapping ==="
 # Assumes LDAP base connection (host/port/base DN/agent DN/agent
 # password/login filter) is already configured manually — see README.
 # Fixes: LDAP accounts showing raw UUIDs instead of uid/cn.
-${OCC} ldap:set-config s01 ldapExpertUsernameAttr uid
-${OCC} ldap:set-config s01 ldapUserDisplayName cn
+occ ldap:set-config s01 ldapExpertUsernameAttr uid
+occ ldap:set-config s01 ldapUserDisplayName cn
 
 # Group detection: assumes groupOfNames + member-attribute groups
 # with no memberOf overlay on the LDAP server (adjust if your
 # directory schema differs).
-${OCC} ldap:set-config s01 ldapGroupFilterObjectclass groupOfNames
-${OCC} ldap:set-config s01 ldapGroupFilter "(&(objectclass=groupOfNames))"
-${OCC} ldap:set-config s01 ldapGroupMemberAssocAttr member
-${OCC} ldap:set-config s01 useMemberOfToDetectMembership 0
-${OCC} ldap:set-config s01 ldapConfigurationActive 1
-${OCC} ldap:set-config s01 ldapAgentPassword "${LDAP_ADMIN_PASSWORD}"
-echo
+occ ldap:set-config s01 ldapGroupFilterObjectclass groupOfNames
+occ ldap:set-config s01 ldapGroupFilter "(&(objectclass=groupOfNames))"
+occ ldap:set-config s01 ldapGroupMemberAssocAttr member
+occ ldap:set-config s01 useMemberOfToDetectMembership 0
 
+occ ldap:set-config s01 ldapConfigurationActive 1
+occ ldap:set-config s01 ldapAgentPassword "${LDAP_ADMIN_PASSWORD}"
+echo
 
 echo "=== [1b/6] LDAP test-user password re-seed ==="
-# These accounts's userPassword can silently revert to the LDIF placeholder
+# These accounts' userPassword can silently revert to the LDIF placeholder
 # after certain restarts (observed 2026-09-08). Re-set them idempotently
 # from env vars (never hardcoded) so logins keep working.
-${LDAP_EXEC} ldappasswd -x -D "cn=admin,dc=udom,dc=local" -w "${LDAP_ADMIN_PASSWORD}" -s "${LDAP_STUDENT_TEST_PASSWORD}" "uid=t21-03-05678,ou=people,dc=udom,dc=local" || true
-${LDAP_EXEC} ldappasswd -x -D "cn=admin,dc=udom,dc=local" -w "${LDAP_ADMIN_PASSWORD}" -s "${LDAP_STAFF_TEST_PASSWORD}" "uid=stf-2031,ou=people,dc=udom,dc=local" || true
+ldap_set_password "uid=t21-03-05678,ou=people,dc=udom,dc=local" "${LDAP_STUDENT_TEST_PASSWORD}"
+ldap_set_password "uid=stf-2031,ou=people,dc=udom,dc=local" "${LDAP_STAFF_TEST_PASSWORD}"
 echo
+
 echo "=== [2/6] Password policy ==="
-${OCC} app:enable password_policy
-${OCC} config:app:set password_policy minimal_length --value="10"
-${OCC} config:app:set password_policy enforceNonCommonPassword --value="1"
-${OCC} config:app:set password_policy enforceNumericCharacters --value="1"
-${OCC} config:app:set password_policy enforceUpperLowerCase --value="1"
-${OCC} config:app:set password_policy enforceSpecialCharacters --value="1"
+occ app:enable password_policy
+occ config:app:set password_policy minimal_length --value="10"
+occ config:app:set password_policy enforceNonCommonPassword --value="1"
+occ config:app:set password_policy enforceNumericCharacters --value="1"
+occ config:app:set password_policy enforceUpperLowerCase --value="1"
+occ config:app:set password_policy enforceSpecialCharacters --value="1"
 echo
 
 echo "=== [3/6] Brute-force protection ==="
-${OCC} config:system:set auth.bruteforce.protection.enabled --value=true --type=boolean
+occ config:system:set auth.bruteforce.protection.enabled --value=true --type=boolean
 echo
 
 echo "=== [4/6] Audit / suspicious-login logging ==="
-${OCC} app:enable admin_audit
-${OCC} config:system:set log.audit.file --value="/var/www/html/data/audit.log"
+occ app:enable admin_audit
+occ config:system:set log.audit.file --value="/var/www/html/data/audit.log"
 # loglevel must be <=1 (Info) or admin_audit events are silently dropped.
-${OCC} config:system:set loglevel --value=1 --type=integer
+occ config:system:set loglevel --value=1 --type=integer
 echo
 
 echo "=== [5/6] Quotas ==="
-${OCC} config:app:set files default_quota --value="5 GB"
+occ config:app:set files default_quota --value="5 GB"
 # Staff quota override — no group-quota app installed, so this is a
 # named per-user override via `user:setting`, not a group-level setting.
 # Only runs if the user already exists (e.g. after their first LDAP login).
-if ${OCC} user:info stf-2031 >/dev/null 2>&1; then
-  ${OCC} user:setting stf-2031 files quota "20 GB"
+if occ user:info stf-2031 >/dev/null 2>&1; then
+  occ user:setting stf-2031 files quota "20 GB"
 else
   echo "  (skipped: stf-2031 not yet provisioned — run again after their first LDAP login)"
 fi
