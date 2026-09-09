@@ -1,0 +1,72 @@
+/* Main login box - white background */
+.guest-box,
+.login-box__wrapper {
+  background-color: white !important;
+}
+
+/* Input field containers - normal/white */
+.input-field__main-wrapper {
+  background-color: transparent !important;
+}
+
+/* Input text - black on white */
+.input-field__input {
+  background-color: white !important;
+  color: #000000 !important;
+}
+
+/* Labels - GOLD background with black text */
+.input-field__label {
+  background-color: #DE9C1B!important;
+  color: #000000 !important;
+  border-radius: 4px;
+}
+
+/* Placeholder text - black */
+.input-field__input::placeholder {
+  color: #000000 !important;
+}
+
+/* Focus state - black text, gold border */
+.input-field__input:focus {
+  background-color: white !important;
+  color: #000000 !important;
+}
+
+/* Headline - black text */
+.login-form__headline {
+  color: #000000 !important;
+}
+
+/* Remember me text - black only */
+.checkbox-radio-switch__text,
+.checkbox-content__text {
+  color: #000000 !important;
+}
+
+/* Button text */
+.button-vue--vue-primary .button-vue__text {
+  color: white !important;
+}
+
+.button-vue--vue-tertiary .button-vue__text {
+  color: #000000 !important;
+}
+.guest-box {
+  color: #000000;
+}
+
+.material-design-icon__svg{
+  color: white;
+}
+
+/* Suggested CSS fix for the icon component */
+span.checkbox-content__icon.checkbox-radio-switch__icon,
+span.checkbox-content__icon .material-design-icon svg {
+  color: #000000 !important;
+  fill: #000000 !important;
+}
+
+header#header {
+    background-color: #0764C1 !important;
+}
