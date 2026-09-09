@@ -11,8 +11,10 @@ echo "Nextcloud is ready. Configuring UDOM Customizations..."
 # 1. UI Branding & Theme Injection
 echo "Preparing UI Customization structure for Taofina..."
 # NOTE FOR TAOFINA (UI/UX):
-# All UI branding, custom CSS, and logo injections should be scripted here.
-# Place your assets in the customizations/theme/ folder.'
+# All UI branding, custom CSS, and logo injections are managed via the repo theme assets.
+# These are applied automatically by the script below so every team member gets the same branding.
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+bash "$SCRIPT_DIR/apply_udom_theming.sh"
 
 # 2. Security & Policy Enforcement
 echo "Enabling Security Modules and 2FA..."
