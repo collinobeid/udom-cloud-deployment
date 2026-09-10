@@ -22,8 +22,7 @@ services:
       - db
     volumes:
       - nextcloud_data:/var/www/html
-      - ./customizations:/var/www/html/custom_assets
-      - ./customizations/appapi.conf:/etc/apache2/conf-enabled/appapi.conf:ro
+     
     environment:
       - MYSQL_PASSWORD=${MYSQL_PASSWORD}
       - MYSQL_DATABASE=${MYSQL_DATABASE}
