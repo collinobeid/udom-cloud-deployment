@@ -17,7 +17,7 @@
 
 /* Labels - GOLD background with black text */
 .input-field__label {
-  background-color: #DE9C1B!important;
+  background-color: #de9c1b !important;
   color: #000000 !important;
   border-radius: 4px;
 }
@@ -56,7 +56,7 @@
   color: #000000;
 }
 
-.material-design-icon__svg{
+.material-design-icon__svg {
   color: white;
 }
 
@@ -68,5 +68,13 @@ span.checkbox-content__icon .material-design-icon svg {
 }
 
 header#header {
-    background-color: #0764C1 !important;
+  background-color: #0764c1 !important;
+}
+
+#Kufany icon zote kuwa black na sio nyeupe :root {
+  --icon-primary-color: black;
+}
+
+svg.material-design-icon__svg {
+  fill: var(--icon-primary-color);
 }
