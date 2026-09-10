@@ -1,1 +1,4 @@
 .env
+
+# Local Nextcloud backups
+backups/
