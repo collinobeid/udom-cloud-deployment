@@ -17,7 +17,7 @@ services:
     restart: always
     command: /bin/bash -lc "a2enmod proxy proxy_http && apache2-foreground"
     ports:
-      - 8080:80
+      - "${APP_PORT:-8080}:80"
     links:
       - db
     volumes:
@@ -66,6 +66,7 @@ services:
     command: php occ taskprocessing:worker
     depends_on:
       - db
+      - app
 
   ollama:
     image: ollama/ollama:latest
