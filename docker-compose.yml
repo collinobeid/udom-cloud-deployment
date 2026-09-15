@@ -13,7 +13,7 @@ services:
       - MYSQL_USER=${MYSQL_USER}
 
   app:
-    image: nextcloud:34.0.3-apache
+    build: .
     restart: always
     ports:
       - "${APP_PORT:-8080}:80"
