@@ -78,3 +78,18 @@ header#header {
 svg.material-design-icon__svg {
   fill: var(--icon-primary-color);
 }
+
+/* Force removal of background image to prevent flashing */
+body, #body-login, #body-public {
+  background-image: none !important;
+  background-color: #f4f5f7 !important; /* Slightly off-white for contrast */
+}
+
+/* Add boundaries/shadows to white containers so they don't blend in */
+.guest-box, .login-box__wrapper {
+  background-color: #ffffff !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15) !important;
+  border: 1px solid #dddddd !important;
+  border-radius: 8px;
+}
+
