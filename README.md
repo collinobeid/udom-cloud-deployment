@@ -80,3 +80,48 @@ Nextcloud Assistant (Response)
   ```bash
   docker exec udom-cloud-deployment-ollama-1 ollama list
   ```
+## Security / Identity / Access — Setup
+
+This domain covers LDAP authentication, password policy, brute-force
+protection, 2FA, quotas, and audit logging. Most of this is automated
+via `scripts/security-setup.sh`; a few steps must be done manually.
+
+### 1. Manual prerequisite — LDAP base connection
+
+Before running the setup script, the LDAP base connection must be
+configured once, manually, since it requires the LDAP bind (agent)
+password — which is never stored in this repository.
+
+Configure via the Nextcloud admin UI (Settings → Administration →
+LDAP/AD integration) or via `occ ldap:set-config s01 <key> <value>`.
+Required settings:
+
+- `ldapHost`, `ldapPort`
+- `ldapBase`, `ldapBaseUsers`, `ldapBaseGroups`
+- `ldapAgentName`, `ldapAgentPassword`
+- `ldapLoginFilter`
+
+### 2. Automated setup
+
+Once the containers are running and the LDAP base connection above is
+configured:
+
+```bash
+bash scripts/security-setup.sh
+```
+
+This script:
+- Fixes LDAP username/display-name/group mapping
+- Configures password policy (min length 10, complexity rules, blocks
+  common passwords)
+- Enables brute-force protection
+- Enables audit logging (`admin_audit`) to a dedicated log file
+- Sets a default 5GB quota, with a 20GB override for staff (`stf-2031`)
+
+The script is idempotent — safe to re-run at any time.
+
+### 3. Manual step — 2FA enrollment
+
+2FA (TOTP) and backup codes must be enabled per-user via
+**Settings → Security → Two-Factor Authentication**. This cannot be
+scripted, since secrets and backup codes must never be stored in git.
