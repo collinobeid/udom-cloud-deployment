@@ -21,7 +21,7 @@ services:
       - db
     volumes:
       - nextcloud_data:/var/www/html
-      - ./customizations:/var/www/html/custom_assets
+      - ./customizations:/opt/nextcloud-custom
       - ./customizations/appapi.conf:/etc/apache2/conf-enabled/appapi.conf:ro
       - ./scripts/enable_apache_proxy.sh:/docker-entrypoint-hooks.d/before-starting/enable_apache_proxy.sh:ro
     environment:
