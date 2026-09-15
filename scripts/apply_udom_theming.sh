@@ -15,7 +15,7 @@ THEME_SLOGAN="Embracing Knowledge"
 THEME_URL="https://udomcloud.com"
 THEME_IMPRINT="https://www.udom.ac.tz/#"
 THEME_PRIVACY="https://www.udom.ac.tz/site/contact"
-THEME_BACKGROUND="#F9F9F9"
+THEME_BACKGROUND="#FFFFFF"
 THEME_PRIMARY="#0764C1"
 
 # Ensure container exists
@@ -35,9 +35,14 @@ docker exec -u 33 "$APP_CONTAINER" php occ config:app:set theming slogan --value
 docker exec -u 33 "$APP_CONTAINER" php occ config:app:set theming url --value="$THEME_URL"
 docker exec -u 33 "$APP_CONTAINER" php occ config:app:set theming imprintUrl --value="$THEME_IMPRINT"
 docker exec -u 33 "$APP_CONTAINER" php occ config:app:set theming privacyUrl --value="$THEME_PRIVACY"
-docker exec -u 33 "$APP_CONTAINER" php occ config:app:set theming background_color --value="$THEME_BACKGROUND"
+docker exec -u 33 "$APP_CONTAINER" php occ config:app:set theming background_color --value="#FFFFFF"
 docker exec -u 33 "$APP_CONTAINER" php occ config:app:set theming primary_color --value="$THEME_PRIMARY"
 docker exec -u 33 "$APP_CONTAINER" php occ config:app:set theming_customcss enabled --value="yes"
+
+# Force "Use a plain background color instead of a background image"
+echo "Enforcing plain white background and Light theme..."
+docker exec -u 33 "$APP_CONTAINER" php occ config:app:set theming backgroundMime --value="backgroundColor"
+docker exec -u 33 "$APP_CONTAINER" php occ config:system:set default_app_theme --value="light"
 
 # Apply CSS
 if [ -f "$CSS_FILE" ]; then
