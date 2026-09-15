@@ -12,6 +12,11 @@ services:
       - MYSQL_DATABASE=${MYSQL_DATABASE}
       - MYSQL_USER=${MYSQL_USER}
 
+  redis:
+    image: redis:alpine
+    restart: always
+    command: redis-server --requirepass udom_redis_secret
+
   app:
     image: nextcloud:34.0.3-apache
     restart: always
@@ -19,6 +24,7 @@ services:
       - "${APP_PORT:-8080}:80"
     links:
       - db
+      - redis
     volumes:
       - nextcloud_data:/var/www/html
       - ./customizations:/opt/nextcloud-custom
