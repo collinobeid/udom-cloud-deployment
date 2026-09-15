@@ -50,36 +50,36 @@ else
 fi
 
 # Locate Nextcloud theming images directory inside container
-echo "Locating Nextcloud theming images directory..."
-THEME_IMAGES_DIR="$(docker exec -u 33 "$APP_CONTAINER" bash -lc "find /var/www/html/data -path '*/theming/global/images' -type d 2>/dev/null | head -n 1")"
-if [ -z "$THEME_IMAGES_DIR" ]; then
-  echo "Warning: could not find Nextcloud theming images directory. Image copy will be skipped."
-else
-  echo "Theme images directory: $THEME_IMAGES_DIR"
-  # Copy images if present in repo theme dir. Detect extension and use correct MIME type.
-  for name in logo favicon logoheader; do
-    for ext in png svg jpg jpeg ico; do
-      src="$THEME_DIR/${name}.${ext}"
-      if [ -f "$src" ]; then
-        echo "Copying $src -> container:/tmp/${name}.${ext}"
-        docker cp "$src" "$APP_CONTAINER:/tmp/${name}.${ext}"
-        # Move into the data theming dir inside container (overwrite existing)
-        docker exec -u 33 "$APP_CONTAINER" bash -lc "cp /tmp/${name}.${ext} '${THEME_IMAGES_DIR}/${name}' || true"
-        # Set MIME type based on extension
-        case "$ext" in
-          png) mime="image/png" ;;
-          svg) mime="image/svg+xml" ;;
-          jpg|jpeg) mime="image/jpeg" ;;
-          ico) mime="image/x-icon" ;;
-          *) mime="application/octet-stream" ;;
-        esac
-        echo "Setting ${name} MIME to $mime"
-        docker exec -u 33 "$APP_CONTAINER" php occ config:app:set theming ${name}Mime --value="$mime" || true
-        break
-      fi
-    done
+echo "Creating Nextcloud theming images directory..."
+INSTANCE_ID=$(docker exec -u 33 "$APP_CONTAINER" php occ config:system:get instanceid)
+THEME_IMAGES_DIR="/var/www/html/data/appdata_${INSTANCE_ID}/theming/global/images"
+docker exec -u 33 "$APP_CONTAINER" mkdir -p "$THEME_IMAGES_DIR"
+
+echo "Theme images directory: $THEME_IMAGES_DIR"
+# Copy images if present in repo theme dir. Detect extension and use correct MIME type.
+for name in logo favicon logoheader; do
+  for ext in png svg jpg jpeg ico; do
+    src="$THEME_DIR/${name}.${ext}"
+    if [ -f "$src" ]; then
+      echo "Copying $src -> container:/tmp/${name}.${ext}"
+      docker cp "$src" "$APP_CONTAINER:/tmp/${name}.${ext}"
+      # Move into the data theming dir inside container (overwrite existing)
+      docker exec -u 33 "$APP_CONTAINER" bash -c "cp /tmp/${name}.${ext} '${THEME_IMAGES_DIR}/${name}'"
+      
+      # Set MIME type based on extension
+      case "$ext" in
+        png) mime="image/png" ;;
+        svg) mime="image/svg+xml" ;;
+        jpg|jpeg) mime="image/jpeg" ;;
+        ico) mime="image/x-icon" ;;
+        *) mime="application/octet-stream" ;;
+      esac
+      echo "Setting ${name} MIME to $mime"
+      docker exec -u 33 "$APP_CONTAINER" php occ config:app:set theming ${name}Mime --value="$mime" >/dev/null 2>&1 || true
+      break
+    fi
   done
-fi
+done
 
 # Force cachebuster so clients see changes
 echo "Updating cachebuster to force browser refresh..."
