@@ -42,7 +42,7 @@ docker exec -u 33 udom-cloud-deployment-app-1 php occ ldap:set-config $CONFIG_ID
 
 # 4. Custom Skeleton Directory (Student files)
 echo "Setting custom UDOM onboarding files..."
-docker exec -u 33 udom-cloud-deployment-app-1 php occ config:system:set skeletondirectory --value='/var/www/html/custom_assets/skeleton'
+docker exec -u 33 udom-cloud-deployment-app-1 php occ config:system:set skeletondirectory --value='/opt/nextcloud-custom/skeleton'
 
 # 5. Local AI Integration (Ollama + Qwen3)
 echo "Setting up Local AI Integration..."
