@@ -106,4 +106,4 @@ volumes:
   db_data:
   nextcloud_data:
   ollama_data:
-  harp_certs:
+  harp_certs:      - ./customizations/coolwsd.conf:/etc/apache2/conf-enabled/coolwsd.conf:ro
